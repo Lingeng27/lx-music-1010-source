@@ -1,8 +1,8 @@
 /*!
- * @name 1010音源
+ * @name 1010🎵音源
  * @description 【手机版·全链路HTTPS】五大平台(wy/tx/kw/kg/mg)聚合直链音源｜每条链路均经真实取链实测(HTTP Range 206 音频校验)筛选｜优先级并发 + 串行兜底｜链路健康度自动降权｜结果缓存
  * @version 1.0.0
- * @author Buddy
+ * @author Lincoln
  * @license MIT
  * @update 2026-10-10
  * @changelog
@@ -429,4 +429,4 @@ on(EVENT_NAMES.request, ({ action, source, info }) => {
 
 send(EVENT_NAMES.inited, { openDevTools: false, sources: sourceConfig })
 
-console.log('1010音源 v1.0.0 已加载 —— 平台: wy/tx/kw/kg/mg')
+console.log('1010🎵音源 v1.0.0 已加载 —— 平台: wy/tx/kw/kg/mg')
