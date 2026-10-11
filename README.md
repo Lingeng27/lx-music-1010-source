@@ -1,6 +1,6 @@
 # 1010音源
 
-洛雪音乐助手（LX Music）自定义音源，覆盖 **wy / tx / kw / kg / mg** 五大平台。
+洛雪音乐助手（LX Music）自定义音源，覆盖 **WY / QQ / KW / KG / MG** 五大平台。
 
 每一条链路都经过真实取链实测（HTTP Range 校验返回 `206` 且 `Content-Type` 为音频）后才写入脚本，而不是照搬源码里的 URL。
 
@@ -20,7 +20,7 @@
 
 手机版洛雪（`lx-music-mobile`）用 **QuickJS** 引擎执行自定义源，和桌面版 Electron 是两套运行时，有两个硬差异：
 
-1. **Android 9+ 默认禁止明文 HTTP**（cleartext traffic）。原版里酷狗链路唯一可用的上游是 `http://` 明文接口，在手机上会被系统拦掉导致取链全失败 → 手机版版本把全部上游升级为 HTTPS（已逐个验证可用）。
+1. **Android 9+ 默认禁止明文 HTTP**（cleartext traffic）。原版里KG链路唯一可用的上游是 `http://` 明文接口，在手机上会被系统拦掉导致取链全失败 → 手机版版本把全部上游升级为 HTTPS（已逐个验证可用）。
 2. **手机版只支持 `128k / 320k / flac / flac24bit` 四个音质档**，声明 `192k` 会被静默过滤 → 手机版版本移除了该档位。
 
 ---
@@ -35,7 +35,7 @@
 
 侧边栏 → 设置 → 自定义源管理 → 导入 → 在线导入 / 本地导入
 
-在线直链（仓库地址确定后替换为你的）：
+在线直链：
 
 ```
 https://raw.githubusercontent.com/Lingeng27/lx-music-1010-source/main/1010.js
@@ -58,11 +58,11 @@ https://ghproxy.net/https://raw.githubusercontent.com/Lingeng27/lx-music-1010-so
 
 | 平台 | 链路 |
 |---|---|
-| wy 网易云 | 网易官方 → 星海GD → 溯音163 → 笒鬼鬼 → HYW → Bugpk |
-| tx QQ音乐 | Vkeys → Vkeys无损(FLAC) → HYW → 流云BaiMusic |
-| kw 酷我 | 酷我官方 nmobi → 酷我官方 mobi → 酷我 antiserver → HYW |
-| kg 酷狗 | HYW（+ 海棠 / 念心 备用） |
-| mg 咪咕 | 溯音咪咕 ×2（按歌名，带歌手校验）+ XCVTS |
+| WY | WY官方 → 星海GD → 溯音163 → 笒鬼鬼 → HYW → Bugpk |
+| QQ | Vkeys → Vkeys无损(FLAC) → HYW → 流云BaiMusic |
+| KW | KW官方 nmobi → KW官方 mobi → KW antiserver → HYW |
+| KG | HYW（+ 海棠 / 念心 备用） |
+| MG | 溯音MG ×2（按歌名，带歌手校验）+ XCVTS |
 
 内置机制：请求超时 8s、链路健康度降权（连续失败 3 次冷却 10 分钟）、直链可播放性预检、LRU 结果缓存、高音质专用链路。
 
@@ -70,8 +70,8 @@ https://ghproxy.net/https://raw.githubusercontent.com/Lingeng27/lx-music-1010-so
 
 ## 已知限制
 
-- **kg 酷狗**实测只剩一条可用链路。念心、长青、海棠等免费接口在 2025–2026 年间大批关闭（`level` 参数已改为加密 token），这是当前网络现状。
-- **mg 咪咕**无法按 copyrightId 精确取链（官方接口已加签名校验），改为按歌名搜索 + 歌手匹配校验，同名翻唱较多时可能匹配到非预期版本。
+- **KG**实测只剩一条可用链路。念心、长青、海棠等免费接口在 2025–2026 年间大批关闭（`level` 参数已改为加密 token），这是当前网络现状。
+- **MG**无法按 copyrightId 精确取链（官方接口已加签名校验），改为按歌名搜索 + 歌手匹配校验，同名翻唱较多时可能匹配到非预期版本。
 - 本音源只实现 `musicUrl`（取直链），搜索与歌词仍走洛雪内置源。
 
 ---
@@ -81,6 +81,21 @@ https://ghproxy.net/https://raw.githubusercontent.com/Lingeng27/lx-music-1010-so
 本项目仅实现播放链接的聚合与调度，不存储、不托管任何音频文件，所有内容均来自各平台公开接口。第三方接口由各自的维护者提供，可能随时失效或变更。
 
 请勿用于商业用途，下载内容仅限个人学习欣赏，请在下载后 24 小时内删除。
+
+---
+
+## 洛雪音乐助手（LX Music）官方下载
+
+本音源只是插件，需要配合洛雪客户端使用。官方项目与下载地址：
+
+| 项目 | 说明 | 地址 |
+|---|---|---|
+| `lx-music-desktop` | 桌面版（Windows / macOS / Linux） | https://github.com/lyswhut/lx-music-desktop |
+| 桌面版 Releases | 各版本安装包下载 | https://github.com/lyswhut/lx-music-desktop/releases |
+| `lx-music-mobile` | 手机版（Android / iOS） | https://github.com/lyswhut/lx-music-mobile |
+| 手机版 Releases | APK / IPA 下载 | https://github.com/lyswhut/lx-music-mobile/releases |
+
+> 请始终从上面两个官方仓库获取客户端，第三方渠道的安装包安全性无法保证。
 
 ---
 
