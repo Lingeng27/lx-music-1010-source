@@ -1,16 +1,19 @@
 /*!
  * @name 1010🎵音源
  * @description 【手机版·全链路HTTPS】五大平台(wy/tx/kw/kg/mg)聚合直链音源｜每条链路均经真实取链实测(HTTP Range 206 音频校验)筛选｜优先级并发 + 串行兜底｜链路健康度自动降权｜结果缓存
- * @version 1.0.0
+ * @version 1.1.0
  * @author Lincoln
  * @license MIT
- * @update 2026-10-10
+ * @update 2026-10-22
  * @changelog
  *   - 以「全豆要[聚合音源] v9.3」架构为骨架重写
  *   - 剔除 v9.3 中已失效的 Huibq / 聆川 / 汽水VIP(api.vsaa.cn) 链路
  *   - 剔除 v9.3 中实测已 404/403 的念心、长青海棠、溯音QQ 链路
  *   - 新增实测可用后端：网易官方、酷我官方三重(mobi/nmobi/antiserver)、Vkeys、Vkeys-FLAC、流云BaiMusic、溯音咪咕
  *   - 新增链路健康度降权、结果缓存、歌手匹配校验(mg)、可播放性预检
+ *   - v1.1.0: 并入社区聚合兜底链路 ikun分享(wy/kw)、幻音解析(wy/tx/kw)，来源 pdone/lx-music-source(2026-09 实测可用)
+ *   - 汽水音乐(Soda)：LX Music 仅支持 wy/tx/kw/kg/mg/local，无对应平台且无可用接口，未整合
+ *   - 六音/野花/LX/长青/野草/JuheApi 等因混淆或需异步初始化，保留为独立备用源，与本源并列导入即可
  */
 
 const { EVENT_NAMES, request, on, send } = globalThis.lx
@@ -199,6 +202,19 @@ const CHAIN = {
       build: c => `https://api.bugpk.com/api/163_music?type=json&ids=${enc(c.id)}`,
       parse: b => pickUrl(b),
     },
+    {
+      // 社区源 pdone/lx-music-source · ikun音源 v22 · 实测可用 2026-09
+      name: 'ikun分享',
+      build: c => `https://api.ikunshare.com/url?source=${c.platform}&songId=${enc(c.id)}&quality=${enc(c.q)}`,
+      parse: b => (b && typeof b === 'object' && b.url) ? b.url : pickUrl(b),
+      headers: { 'X-Request-Key': '' },
+    },
+    {
+      // 社区源 pdone/lx-music-source · 幻音音源 v3 · 实测可用 2026-09
+      name: '幻音解析',
+      build: c => `https://music-dl.sayqz.com/api/?source=netease&id=${enc(c.id)}&type=url&br=${enc(c.q)}`,
+      parse: b => pickUrl(b),
+    },
   ],
   tx: [
     {
@@ -222,6 +238,12 @@ const CHAIN = {
       build: c => `https://api.liuyunidc.cn/baimusic/musicurl.php?source=tx&musicId=${enc(c.id)}`,
       parse: b => pickUrl(b),
     },
+    {
+      // 社区源 pdone/lx-music-source · 幻音音源 v3 · 实测可用 2026-09
+      name: '幻音解析',
+      build: c => `https://music-dl.sayqz.com/api/?source=qq&id=${enc(c.id)}&type=url&br=${enc(c.q)}`,
+      parse: b => pickUrl(b),
+    },
   ],
   kw: [
     {
@@ -242,6 +264,19 @@ const CHAIN = {
     {
       name: 'HYW',
       build: c => `https://103.79.184.97/api/music/url?source=kw&songId=${enc(c.id)}&quality=${HYW_Q[c.q] || '320k'}&key=6C1F-53W0-GRKI-EVFG`,
+      parse: b => pickUrl(b),
+    },
+    {
+      // 社区源 pdone/lx-music-source · ikun音源 v22 · 实测可用 2026-09
+      name: 'ikun分享',
+      build: c => `https://api.ikunshare.com/url?source=${c.platform}&songId=${enc(c.id)}&quality=${enc(c.q)}`,
+      parse: b => (b && typeof b === 'object' && b.url) ? b.url : pickUrl(b),
+      headers: { 'X-Request-Key': '' },
+    },
+    {
+      // 社区源 pdone/lx-music-source · 幻音音源 v3 · 实测可用 2026-09
+      name: '幻音解析',
+      build: c => `https://music-dl.sayqz.com/api/?source=kuwo&id=${enc(c.id)}&type=url&br=${enc(c.q)}`,
       parse: b => pickUrl(b),
     },
   ],
@@ -429,4 +464,4 @@ on(EVENT_NAMES.request, ({ action, source, info }) => {
 
 send(EVENT_NAMES.inited, { openDevTools: false, sources: sourceConfig })
 
-console.log('1010🎵音源 v1.0.0 已加载 —— 平台: wy/tx/kw/kg/mg')
+console.log('1010🎵音源 v1.1.0 已加载 —— 平台: wy/tx/kw/kg/mg')
