@@ -1,10 +1,10 @@
 /*!
  * @name 1010🎵音源
  * @description 五大平台(wy/tx/kw/kg/mg)聚合直链音源｜每条链路均经真实取链实测(HTTP Range 206 音频校验)筛选｜优先级并发 + 串行兜底｜链路健康度自动降权｜结果缓存
- * @version 1.1.0
+ * @version 1.2.0
  * @author Lincoln
  * @license MIT
- * @update 2026-10-22
+ * @update 2026-11-09
  * @changelog
  *   - 以「全豆要[聚合音源] v9.3」架构为骨架重写
  *   - 剔除 v9.3 中已失效的 Huibq / 聆川 / 汽水VIP(api.vsaa.cn) 链路
@@ -14,6 +14,14 @@
  *   - v1.1.0: 并入社区聚合兜底链路 ikun分享(wy/kw)、幻音解析(wy/tx/kw)，来源 pdone/lx-music-source(2026-09 实测可用)
  *   - 汽水音乐(Soda)：LX Music 仅支持 wy/tx/kw/kg/mg/local，无对应平台且无可用接口，未整合
  *   - 六音/野花/LX/长青/野草/JuheApi 等因混淆或需异步初始化，保留为独立备用源，与本源并列导入即可
+ *   - v1.2.0 (2026-11-09): 并入 pdone 11-08 新增音源中的 3 条实测可用兜底链路
+ *     · wy: FFAPI网易(ffapi.cn, GET)、Lzm网易(music.lzmhhh.com, POST form + Referer)
+ *     · tx: 巡回寺QQ(api.xunhuisi.store, GET, 精确取 music_url 字段)
+ *     · 依据：2026-11-09 真实歌曲取链 + HTTP Range 206 音频校验；均排在既有链路之后
+ *     · runLink 新增可选 opts 透传(method/body/headers)，未声明时仍为 GET，对旧链路零影响
+ *     · 排除：api.bileizhen.top(安全中心判定黑灰产)、nxinxz/haitangw(返回音频字节流非 url)、
+ *       yutangxiaowu/kangqiovo/metings(参数 400)、lzmhhh 的 tx(密钥次数不足)
+ *     · kw 侧本次无可移植的新端点；酷我官方 mobi/nmobi/antiserver 与 HYW 实测仍可出链
  */
 
 const { EVENT_NAMES, request, on, send } = globalThis.lx
@@ -215,6 +223,26 @@ const CHAIN = {
       build: c => `https://music-dl.sayqz.com/api/?source=netease&id=${enc(c.id)}&type=url&br=${enc(c.q)}`,
       parse: b => pickUrl(b),
     },
+    {
+      // v1.2.0 新增 · pdone/qingliang(2026-11-08) · 2026-11-09 实测出链 + Range 206
+      name: 'FFAPI网易',
+      build: c => `https://ffapi.cn/int/v1/netease_url?id=${enc(c.id)}&quality=exhigh`,
+      parse: b => (b && typeof b === 'object' && typeof b.url === 'string' && /^https?:\/\//.test(b.url)) ? b.url : pickUrl(b),
+    },
+    {
+      // v1.2.0 新增 · pdone/qingliang(2026-11-08) · 必须 POST form + Referer
+      name: 'Lzm网易',
+      build: c => `https://music.lzmhhh.com/api/music/url`,
+      opts: c => ({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Referer: 'https://music.lzmhhh.com/',
+        },
+        body: `id=${enc(c.id)}&type=wy`,
+      }),
+      parse: b => (b && typeof b === 'object' && typeof b.data === 'string' && /^https?:\/\//.test(b.data)) ? b.data : pickUrl(b),
+    },
   ],
   tx: [
     {
@@ -243,6 +271,13 @@ const CHAIN = {
       name: '幻音解析',
       build: c => `https://music-dl.sayqz.com/api/?source=qq&id=${enc(c.id)}&type=url&br=${enc(c.q)}`,
       parse: b => pickUrl(b),
+    },
+    {
+      // v1.2.0 新增 · pdone/qingliang(2026-11-08) · 2026-11-09 实测 2/2 出链
+      // 响应含网页 link 字段，必须精确取 music_url
+      name: '巡回寺QQ',
+      build: c => `https://api.xunhuisi.store/API/QQMusic/Song.php?mid=${enc(c.id)}&type=json`,
+      parse: b => (b && typeof b === 'object' && typeof b.music_url === 'string' && /^https?:\/\//.test(b.music_url.trim())) ? b.music_url.trim() : pickUrl(b),
     },
   ],
   kw: [
@@ -381,7 +416,15 @@ function precheck(url) {
 // ==================== 单链路执行 ====================
 async function runLink(link, ctx) {
   const url = link.build(ctx)
-  const body = await httpGet(url, { headers: link.headers, timeout: CFG.reqTimeout })
+  // opts 可选：{ method, body, headers } —— 供 POST form 类链路使用；
+  // 未声明时 method 回退 GET，行为与旧版一致。
+  const o = (typeof link.opts === 'function' ? link.opts(ctx) : link.opts) || {}
+  const body = await httpGet(url, {
+    method: o.method,
+    body: o.body,
+    headers: Object.assign({}, link.headers || {}, o.headers || {}),
+    timeout: CFG.reqTimeout,
+  })
   const direct = link.parse ? link.parse(body, ctx) : pickUrl(body)
   if (!isLikelyAudio(direct)) throw new Error('未取到直链')
   if (!(await precheck(direct))) throw new Error('直链不可播放')
@@ -464,4 +507,4 @@ on(EVENT_NAMES.request, ({ action, source, info }) => {
 
 send(EVENT_NAMES.inited, { openDevTools: false, sources: sourceConfig })
 
-console.log('1010🎵音源 v1.1.0 已加载 —— 平台: wy/tx/kw/kg/mg')
+console.log('1010🎵音源 v1.2.0 已加载 —— 平台: wy/tx/kw/kg/mg')
